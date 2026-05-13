@@ -5,7 +5,7 @@ import { AuthController } from './auth.controller';
 import { JwtAuthGuard } from './jwt.guard';
 import { RolesGuard } from './roles.guard';
 
-const expiresIn = process.env.JWT_EXPIRES_IN || '7d';
+const expiresIn = (process.env.JWT_EXPIRES_IN || '7d') as string & {};
 
 @Global()
 @Module({
