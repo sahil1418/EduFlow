@@ -1,0 +1,88 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg: #f7f8fb;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f1f3f9;
+  --color-border: #e4e7ee;
+  --color-border-strong: #cfd4df;
+  --color-text: #1a1f2c;
+  --color-text-muted: #5b6478;
+  --color-text-subtle: #8b93a7;
+
+  --color-brand: #4f46e5;
+  --color-brand-soft: #eef2ff;
+  --color-brand-hover: #4338ca;
+  --color-success: #16a34a;
+  --color-success-soft: #ecfdf5;
+  --color-warn: #d97706;
+  --color-warn-soft: #fff7ed;
+  --color-danger: #dc2626;
+  --color-danger-soft: #fef2f2;
+  --color-info: #0284c7;
+  --color-info-soft: #eff6ff;
+
+  --radius-card: 14px;
+  --radius-input: 10px;
+  --shadow-card: 0 1px 2px rgba(16, 24, 40, 0.04), 0 1px 3px rgba(16, 24, 40, 0.06);
+  --shadow-lift: 0 4px 12px rgba(16, 24, 40, 0.08);
+}
+
+html, body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-feature-settings: "cv11", "ss01";
+  -webkit-font-smoothing: antialiased;
+}
+
+* { border-color: var(--color-border); }
+
+/* Reusable atoms — kept terse so Tailwind utilities still win */
+.ef-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+}
+.ef-input {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-input);
+  padding: 0.55rem 0.75rem;
+  width: 100%;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.ef-input:focus { border-color: var(--color-brand); box-shadow: 0 0 0 3px var(--color-brand-soft); }
+
+.ef-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: 0.5rem;
+  padding: 0.55rem 1rem;
+  border-radius: var(--radius-input);
+  font-weight: 600;
+  font-size: 0.875rem;
+  transition: background 0.15s, color 0.15s, border-color 0.15s, transform 0.05s;
+}
+.ef-btn:active { transform: translateY(1px); }
+.ef-btn-primary { background: var(--color-brand); color: white; }
+.ef-btn-primary:hover { background: var(--color-brand-hover); }
+.ef-btn-ghost { background: transparent; color: var(--color-text); }
+.ef-btn-ghost:hover { background: var(--color-surface-muted); }
+.ef-btn-outline { background: var(--color-surface); color: var(--color-text); border: 1px solid var(--color-border-strong); }
+.ef-btn-outline:hover { background: var(--color-surface-muted); }
+
+.ef-chip {
+  display: inline-flex; align-items: center; gap: 0.35rem;
+  padding: 0.2rem 0.55rem; border-radius: 999px;
+  font-size: 0.75rem; font-weight: 600;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-muted);
+  color: var(--color-text-muted);
+}
+
+.ef-chip-brand   { background: var(--color-brand-soft);   color: var(--color-brand);   border-color: transparent; }
+.ef-chip-success { background: var(--color-success-soft); color: var(--color-success); border-color: transparent; }
+.ef-chip-warn    { background: var(--color-warn-soft);    color: var(--color-warn);    border-color: transparent; }
+.ef-chip-danger  { background: var(--color-danger-soft);  color: var(--color-danger);  border-color: transparent; }
+.ef-chip-info    { background: var(--color-info-soft);    color: var(--color-info);    border-color: transparent; }
