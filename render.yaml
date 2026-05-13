@@ -22,7 +22,7 @@ services:
     plan: free
     rootDir: apps/api
     healthCheckPath: /health
-    buildCommand: corepack enable && corepack prepare pnpm@9.0.0 --activate && pnpm install --no-frozen-lockfile && pnpm exec prisma generate && pnpm exec prisma db push --accept-data-loss --skip-generate && pnpm build
+    buildCommand: npm i -g pnpm@9 && pnpm install --no-frozen-lockfile && pnpm exec prisma generate && pnpm exec prisma db push --accept-data-loss --skip-generate && pnpm build
     startCommand: pnpm start:prod
     envVars:
       - key: DATABASE_URL
