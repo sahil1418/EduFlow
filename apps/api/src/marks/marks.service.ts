@@ -69,38 +69,53 @@ export class MarksService {
     const exam = await this.prisma.exam.findFirst({ where: { id: examId, schoolId } });
     if (!exam) throw new NotFoundException('Exam not found');
 
-    const ops = rows.map((r) => {
+    // Validate up-front so we never open a transaction for a bad row.
+    for (const r of rows) {
       if (r.marks < 0 || r.marks > exam.maxMarks) {
         throw new BadRequestException(`Marks ${r.marks} out of range (0..${exam.maxMarks})`);
       }
-      const subjectId = r.subjectId ?? exam.subjectId ?? null;
-      return this.prisma.examMark.upsert({
-        where: {
-          examId_studentId_subjectId: {
-            examId,
-            studentId: r.studentId,
-            subjectId,
-          },
-        },
-        update: {
-          marks: r.marks,
-          remarks: r.remarks,
-          enteredById,
-          grade: this.gradeFor(r.marks, exam.maxMarks),
-        },
-        create: {
-          schoolId,
-          examId,
-          studentId: r.studentId,
-          subjectId,
-          marks: r.marks,
-          remarks: r.remarks,
-          enteredById,
-          grade: this.gradeFor(r.marks, exam.maxMarks),
-        },
-      });
+    }
+
+    // Prisma 5 rejects `null` inside composite-unique `where` payloads
+    // (`examId_studentId_subjectId`), so we can't use upsert when subjectId
+    // is nullable. Fall back to find-then-update/create inside an
+    // interactive transaction so the whole batch is still atomic.
+    const saved = await this.prisma.$transaction(async (tx) => {
+      const out: any[] = [];
+      for (const r of rows) {
+        const subjectId = r.subjectId ?? exam.subjectId ?? null;
+        const grade = this.gradeFor(r.marks, exam.maxMarks);
+        const existing = await tx.examMark.findFirst({
+          where: { examId, studentId: r.studentId, subjectId },
+          select: { id: true },
+        });
+        if (existing) {
+          out.push(
+            await tx.examMark.update({
+              where: { id: existing.id },
+              data: { marks: r.marks, remarks: r.remarks, enteredById, grade },
+            }),
+          );
+        } else {
+          out.push(
+            await tx.examMark.create({
+              data: {
+                schoolId,
+                examId,
+                studentId: r.studentId,
+                subjectId,
+                marks: r.marks,
+                remarks: r.remarks,
+                enteredById,
+                grade,
+              },
+            }),
+          );
+        }
+      }
+      return out;
     });
-    const saved = await this.prisma.$transaction(ops);
+
     return { saved: saved.length };
   }
 

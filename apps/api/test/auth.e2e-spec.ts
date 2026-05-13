@@ -58,9 +58,11 @@ describe('Auth (e2e)', () => {
     expect(ok.status).toBe(201);
     expect(ok.body.accessToken).toBeDefined();
 
+    // LoginDto requires password length >= 6, so 'wrong' would 400 before
+    // hitting the service. Use a long-enough wrong password.
     const bad = await request(server)
       .post('/auth/login')
-      .send({ subdomain: 'login', email: 'admin@login.test', password: 'wrong' });
+      .send({ subdomain: 'login', email: 'admin@login.test', password: 'wrongpassword' });
     expect(bad.status).toBe(401);
   });
 
