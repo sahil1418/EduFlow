@@ -2,10 +2,13 @@ import { Injectable, NestMiddleware, NotFoundException } from '@nestjs/common';
 import { NextFunction, Request, Response } from 'express';
 import { PrismaService } from '../prisma/prisma.service';
 
-declare module 'express-serve-static-core' {
-  interface Request {
-    schoolId?: string;
-    schoolSubdomain?: string;
+declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
+  namespace Express {
+    interface Request {
+      schoolId?: string;
+      schoolSubdomain?: string;
+    }
   }
 }
 
