@@ -20,9 +20,10 @@ services:
     name: eduflow-api
     runtime: node
     plan: free
+    rootDir: apps/api
     healthCheckPath: /health
-    buildCommand: npm i -g pnpm@9 && NODE_ENV=development pnpm install --no-frozen-lockfile && cd apps/api && pnpm exec prisma generate && pnpm exec prisma db push --accept-data-loss --skip-generate && pnpm run build && ls dist/main.js
-    startCommand: cd apps/api && node dist/main
+    buildCommand: cd ../.. && npm i -g pnpm@9 && NODE_ENV=development pnpm install --no-frozen-lockfile && cd apps/api && pnpm exec prisma generate && pnpm exec prisma db push --accept-data-loss --skip-generate && pnpm run build
+    startCommand: node dist/main
     envVars:
       - key: DATABASE_URL
         fromDatabase:
