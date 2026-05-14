@@ -7,6 +7,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { api, session } from '@/lib/api';
+import { portalForRole } from '@/lib/role-config';
 
 export type LoginRole = 'principal' | 'teacher' | 'student' | 'parent';
 type Mode = 'password' | 'otp';
@@ -100,12 +101,14 @@ export function LoginForm({ role }: { role: LoginRole }) {
     setErr(null);
     setBusy(true);
     try {
+      let user: any;
       if (mode === 'password') {
         const res = await api<{ accessToken: string; user: any }>('/auth/login', {
           method: 'POST',
           body: JSON.stringify({ subdomain, email: identifier, password }),
         });
         session.set(res.accessToken, res.user, subdomain);
+        user = res.user;
       } else if (!otpRequested) {
         await api('/auth/otp/request', {
           method: 'POST',
@@ -120,8 +123,13 @@ export function LoginForm({ role }: { role: LoginRole }) {
           body: JSON.stringify({ subdomain, identifier, code }),
         });
         session.set(res.accessToken, res.user, subdomain);
+        user = res.user;
       }
-      router.push('/dashboard');
+      // Route to the user's actual portal — regardless of which login page
+      // they came through. A student who lands on /login/principal still
+      // ends up at /student/dashboard after authenticating.
+      const portal = portalForRole(user?.role);
+      router.push(portal.defaultRoute);
     } catch (e: any) {
       setErr(e.message || 'Login failed');
     } finally {
