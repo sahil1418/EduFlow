@@ -53,6 +53,20 @@ export default function StudentDashboard() {
       .slice(0, 3);
   }, [posts]);
 
+  // "What's due this week" — assignments due in the next 7 days, sorted by urgency.
+  const dueThisWeek = useMemo(() => {
+    const now = Date.now();
+    const weekFromNow = now + 7 * 86_400_000;
+    return posts
+      .filter((p) => p.type === 'ASSIGNMENT' && p.assignment)
+      .map((p) => ({
+        ...p,
+        _dueAt: new Date(p.assignment.dueAt).getTime(),
+      }))
+      .filter((p) => p._dueAt > now && p._dueAt <= weekFromNow)
+      .sort((a, b) => a._dueAt - b._dueAt);
+  }, [posts]);
+
   const latestExam = report?.exams?.[report.exams.length - 1];
 
   return (
@@ -196,12 +210,13 @@ export default function StudentDashboard() {
           </Card>
         </section>
 
-        {/* Pending homework */}
-        {pendingHomework.length > 0 && (
+        {/* What's due this week — replaces simple pending homework with urgency cues */}
+        {dueThisWeek.length > 0 && (
           <Card variant="solid">
             <CardHeader
-              eyebrow="Don't miss"
-              title="Pending homework"
+              eyebrow="This week"
+              title={`${dueThisWeek.length} due in the next 7 days`}
+              subtitle="Soonest first"
               right={
                 <Link href="/student/assignments" className="ef-btn ef-btn-ghost text-sm">
                   All <ArrowRight className="h-4 w-4" />
@@ -210,28 +225,45 @@ export default function StudentDashboard() {
             />
             <CardBody className="p-0">
               <ul>
-                {pendingHomework.map((p) => (
-                  <li key={p.id} className="px-5 py-3 border-b last:border-0 border-[var(--color-border)] flex items-center gap-3">
-                    <span
-                      className="h-9 w-9 rounded-lg grid place-items-center shrink-0"
-                      style={{ background: `${ACCENT}10`, color: ACCENT }}
-                    >
-                      <ClipboardList className="h-4 w-4" />
-                    </span>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm">{p.title}</p>
-                      <p className="text-xs text-[var(--color-text-muted)]">
-                        Due {new Date(p.assignment.dueAt).toLocaleString()}
-                      </p>
-                    </div>
-                    <Link
-                      href={`/student/assignments/${p.assignment.id}`}
-                      className="ef-btn ef-btn-outline text-xs py-1.5 px-3"
-                    >
-                      Open <ArrowRight className="h-3 w-3" />
-                    </Link>
-                  </li>
-                ))}
+                {dueThisWeek.map((p) => {
+                  const ms = p._dueAt - Date.now();
+                  const hours = ms / 3_600_000;
+                  const isToday = hours < 24;
+                  const isTomorrow = hours >= 24 && hours < 48;
+                  const dueLabel = isToday
+                    ? `Due today · ${new Date(p._dueAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+                    : isTomorrow
+                    ? `Due tomorrow · ${new Date(p._dueAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+                    : `Due ${new Date(p._dueAt).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })}`;
+                  const chipTone = isToday ? 'ef-chip-danger' : isTomorrow ? 'ef-chip-warn' : 'ef-chip-brand';
+                  return (
+                    <li key={p.id} className="px-5 py-3 border-b last:border-0 border-[var(--color-border)] flex items-center gap-3">
+                      <span
+                        className="h-9 w-9 rounded-lg grid place-items-center shrink-0"
+                        style={isToday
+                          ? { background: 'rgba(220,38,38,0.10)', color: 'var(--color-danger)' }
+                          : { background: `${ACCENT}10`, color: ACCENT }}
+                      >
+                        <ClipboardList className="h-4 w-4" />
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm truncate">{p.title}</p>
+                        <div className="flex items-center gap-2 mt-1 flex-wrap">
+                          <span className={`ef-chip ${chipTone}`}>{dueLabel}</span>
+                          {p.assignment.maxMarks != null && (
+                            <span className="text-xs text-[var(--color-text-muted)]">Max {p.assignment.maxMarks}</span>
+                          )}
+                        </div>
+                      </div>
+                      <Link
+                        href={`/student/assignments/${p.assignment.id}`}
+                        className="ef-btn ef-btn-outline text-xs py-1.5 px-3"
+                      >
+                        Open <ArrowRight className="h-3 w-3" />
+                      </Link>
+                    </li>
+                  );
+                })}
               </ul>
             </CardBody>
           </Card>

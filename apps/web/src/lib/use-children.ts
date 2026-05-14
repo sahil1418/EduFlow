@@ -14,6 +14,7 @@ export type Child = {
       id: string;
       name: string;
       class: { id: string; label: string; grade: number };
+      classTeacher: { id: string; name: string; email: string | null } | null;
     } | null;
   };
 };

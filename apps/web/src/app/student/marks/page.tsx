@@ -6,6 +6,7 @@ import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { api, session } from '@/lib/api';
 import { downloadCsv } from '@/lib/export';
+import { SubjectTrends } from '@/components/charts/SubjectTrends';
 
 const ACCENT = '#2563eb';
 
@@ -116,6 +117,9 @@ export default function StudentReportCardPage() {
           </Card>
         )}
 
+        {/* Subject trends — only when there's enough data */}
+        <SubjectTrends exams={report.exams} accent={ACCENT} />
+
         {/* Per-exam printable card */}
         <Card variant="solid" className="print:shadow-none print:border-0 overflow-hidden">
           <div className="p-8 print:p-6">
@@ -194,3 +198,4 @@ export default function StudentReportCardPage() {
     </>
   );
 }
+

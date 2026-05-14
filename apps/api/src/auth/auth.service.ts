@@ -119,7 +119,12 @@ export class AuthService {
       include: {
         student: {
           include: {
-            section: { include: { class: { select: { id: true, label: true, grade: true } } } },
+            section: {
+              include: {
+                class: { select: { id: true, label: true, grade: true } },
+                classTeacher: { select: { id: true, name: true, email: true } },
+              },
+            },
           },
         },
       },

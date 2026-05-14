@@ -110,12 +110,25 @@ export default function ParentFeesPage() {
                     <tbody>
                       {outstanding.map((p) => {
                         const remaining = p.structure.amount - p.amountPaid;
-                        const overdue = p.structure.dueDate && new Date(p.structure.dueDate) < new Date();
+                        const dueDate = p.structure.dueDate ? new Date(p.structure.dueDate) : null;
+                        const daysOverdue = dueDate
+                          ? Math.floor((Date.now() - dueDate.getTime()) / 86_400_000)
+                          : null;
+                        const overdue = daysOverdue !== null && daysOverdue > 0;
                         return (
                           <tr key={p.id} className="border-b last:border-0 border-[var(--color-border)]">
                             <td className="px-5 py-3 font-medium">{p.structure.name}</td>
                             <td className="px-5 py-3 text-[var(--color-text-muted)]">
-                              {p.structure.dueDate ? new Date(p.structure.dueDate).toLocaleDateString() : '—'}
+                              {dueDate ? (
+                                <div>
+                                  <div>{dueDate.toLocaleDateString()}</div>
+                                  {overdue && (
+                                    <div className="text-xs font-semibold mt-0.5" style={{ color: 'var(--color-danger)' }}>
+                                      {daysOverdue} day{daysOverdue === 1 ? '' : 's'} overdue
+                                    </div>
+                                  )}
+                                </div>
+                              ) : '—'}
                             </td>
                             <td className="px-5 py-3 text-right tabular-nums">₹{p.structure.amount.toLocaleString()}</td>
                             <td className="px-5 py-3 text-right tabular-nums text-[var(--color-success)]">₹{p.amountPaid.toLocaleString()}</td>

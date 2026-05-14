@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import {
   CalendarCheck, FileText, ClipboardList, Wallet, MessageSquare,
-  ArrowRight, Clock, Sparkles,
+  ArrowRight, Clock, Sparkles, CheckCircle2, AlertCircle, MinusCircle,
 } from 'lucide-react';
 import { TopBar } from '@/components/layout/TopBar';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
@@ -61,6 +61,13 @@ export default function ParentDashboard() {
   );
   const totalDue = outstandingFees.reduce((a, f) => a + (f.structure?.amount ?? 0) - (f.amountPaid ?? 0), 0);
 
+  // Today's attendance for this child — pulled from the monthly view
+  const todayIso = today.toISOString().slice(0, 10);
+  const todayRecord = (attendance?.records ?? []).find((r: any) =>
+    new Date(r.date).toISOString().slice(0, 10) === todayIso
+  );
+  const todayStatus = todayRecord?.status ?? null;
+
   return (
     <>
       <TopBar
@@ -74,6 +81,12 @@ export default function ParentDashboard() {
 
         {!activeChild ? null : (
           <>
+            {/* Today's status hero — the single most important thing for parents */}
+            <TodayStatusHero
+              status={todayStatus}
+              studentFirstName={activeChild.student.name.split(' ')[0]}
+            />
+
             {/* Stats */}
             <section className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               <BigStat
@@ -242,6 +255,93 @@ function BigStat({
       </div>
       <div className={`mt-3 text-3xl font-bold tabular-nums tracking-tight ${cls}`}>{value}</div>
       {sub && <div className="mt-1.5 text-xs text-[var(--color-text-muted)]">{sub}</div>}
+    </Card>
+  );
+}
+
+/** Big "PRESENT today" hero — the single most important thing for parents. */
+function TodayStatusHero({
+  status,
+  studentFirstName,
+}: { status: string | null; studentFirstName: string }) {
+  const today = new Date();
+  const isWeekend = today.getDay() === 0 || today.getDay() === 6;
+
+  // Determine tone + content
+  let bg: string, ring: string, icon: React.ReactNode, headline: string, sub: string;
+  if (isWeekend) {
+    bg = 'rgba(15,23,42,0.04)';
+    ring = 'rgba(15,23,42,0.08)';
+    icon = <MinusCircle className="h-9 w-9" style={{ color: 'var(--color-text-muted)' }} />;
+    headline = 'No school today';
+    sub = 'Enjoy the weekend.';
+  } else if (status === 'PRESENT') {
+    bg = 'linear-gradient(135deg, rgba(22,163,74,0.10), rgba(22,163,74,0.04))';
+    ring = 'rgba(22,163,74,0.30)';
+    icon = <CheckCircle2 className="h-9 w-9" style={{ color: 'var(--color-success)' }} />;
+    headline = `${studentFirstName} is present today`;
+    sub = `All good — marked in for ${today.toLocaleDateString(undefined, { weekday: 'long' })}.`;
+  } else if (status === 'LATE') {
+    bg = 'linear-gradient(135deg, rgba(217,119,6,0.12), rgba(217,119,6,0.04))';
+    ring = 'rgba(217,119,6,0.35)';
+    icon = <AlertCircle className="h-9 w-9" style={{ color: 'var(--color-warn)' }} />;
+    headline = `${studentFirstName} arrived late today`;
+    sub = 'Marked present, but flagged late by the class teacher.';
+  } else if (status === 'HALF_DAY') {
+    bg = 'linear-gradient(135deg, rgba(2,132,199,0.12), rgba(2,132,199,0.04))';
+    ring = 'rgba(2,132,199,0.30)';
+    icon = <AlertCircle className="h-9 w-9" style={{ color: 'var(--color-info)' }} />;
+    headline = `${studentFirstName} attended half-day`;
+    sub = 'Counted as half a day in this month’s attendance.';
+  } else if (status === 'ABSENT') {
+    bg = 'linear-gradient(135deg, rgba(220,38,38,0.12), rgba(220,38,38,0.04))';
+    ring = 'rgba(220,38,38,0.35)';
+    icon = <AlertCircle className="h-9 w-9" style={{ color: 'var(--color-danger)' }} />;
+    headline = `${studentFirstName} is absent today`;
+    sub = 'Tap below to send a reason — the class teacher will see it instantly.';
+  } else if (status === 'ON_LEAVE') {
+    bg = 'linear-gradient(135deg, rgba(79,70,229,0.10), rgba(79,70,229,0.04))';
+    ring = 'rgba(79,70,229,0.30)';
+    icon = <CheckCircle2 className="h-9 w-9" style={{ color: 'var(--color-brand)' }} />;
+    headline = `${studentFirstName} is on approved leave`;
+    sub = 'A leave application is in effect for today.';
+  } else {
+    bg = 'rgba(15,23,42,0.03)';
+    ring = 'rgba(15,23,42,0.08)';
+    icon = <Clock className="h-9 w-9" style={{ color: 'var(--color-text-muted)' }} />;
+    headline = `Attendance not yet marked`;
+    sub = `The class teacher will mark roll call for ${studentFirstName} shortly.`;
+  }
+
+  return (
+    <Card variant="solid" className="overflow-hidden">
+      <div
+        className="p-5 sm:p-6 flex items-center gap-4 border-l-4"
+        style={{
+          background: bg,
+          borderLeftColor: ring,
+        }}
+      >
+        <div
+          className="h-16 w-16 rounded-2xl grid place-items-center shrink-0 bg-white"
+          style={{ boxShadow: `0 6px 24px ${ring}` }}
+        >
+          {icon}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="ef-eyebrow mb-1">Today &middot; {today.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}</div>
+          <h3 className="text-xl sm:text-2xl font-bold tracking-tight leading-tight">{headline}</h3>
+          <p className="text-sm text-[var(--color-text-muted)] mt-1">{sub}</p>
+        </div>
+        {status === 'ABSENT' && (
+          <Link
+            href="/parent/attendance"
+            className="ef-btn ef-btn-outline text-sm hidden sm:inline-flex"
+          >
+            Explain
+          </Link>
+        )}
+      </div>
     </Card>
   );
 }

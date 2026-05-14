@@ -8,6 +8,7 @@ import { api, session } from '@/lib/api';
 import { useChildren } from '@/lib/use-children';
 import { ChildHeader } from '@/components/parent/ChildHeader';
 import { downloadCsv } from '@/lib/export';
+import { SubjectTrends } from '@/components/charts/SubjectTrends';
 
 const ACCENT = '#0d9488';
 
@@ -94,6 +95,8 @@ export default function ParentReportCardPage() {
                 </Button>
               </div>
             </div>
+
+            <SubjectTrends exams={report.exams} accent={ACCENT} />
 
             <Card variant="solid" className="print:shadow-none print:border-0 overflow-hidden">
               <div className="p-8 print:p-6">
