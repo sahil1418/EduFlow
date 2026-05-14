@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { PremiumLoader } from '@/components/common/PremiumLoader';
+import { PageTransition } from '@/components/layout/PageTransition';
 import { session } from '@/lib/api';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -24,7 +25,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen flex">
       <Sidebar schoolName={schoolName} />
-      <div className="flex-1 flex flex-col min-w-0">{children}</div>
+      <div className="flex-1 flex flex-col min-w-0">
+        <PageTransition>{children}</PageTransition>
+      </div>
     </div>
   );
 }

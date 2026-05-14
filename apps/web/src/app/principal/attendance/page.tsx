@@ -1,10 +1,12 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
-import { CalendarCheck, Calendar as CalendarIcon, Users } from 'lucide-react';
+import { CalendarCheck, Calendar as CalendarIcon, Users, Download } from 'lucide-react';
 import { TopBar } from '@/components/layout/TopBar';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
+import { Button } from '@/components/ui/Button';
 import { api, session } from '@/lib/api';
+import { downloadCsv } from '@/lib/export';
 
 const ACCENT = '#dc2626';
 
@@ -119,13 +121,35 @@ export default function PrincipalAttendancePage() {
                 <h2 className="text-lg font-bold">Attendance summary</h2>
               </div>
             </div>
-            <div className="w-44 ml-auto">
-              <Input
-                label="Date"
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-              />
+            <div className="ml-auto flex items-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  const rows = stats.map((s) => ({
+                    Class: s.section.classLabel,
+                    Section: s.section.name,
+                    Roll: s.total,
+                    Present: s.present,
+                    Absent: s.absent,
+                    Late: s.late,
+                    HalfDay: s.halfDay,
+                    Pending: s.pending,
+                    Percentage: s.pct,
+                  }));
+                  downloadCsv(`attendance-${date}.csv`, rows);
+                }}
+                disabled={!stats.length}
+              >
+                <Download className="h-4 w-4" /> CSV
+              </Button>
+              <div className="w-44">
+                <Input
+                  label="Date"
+                  type="date"
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                />
+              </div>
             </div>
           </CardBody>
         </Card>

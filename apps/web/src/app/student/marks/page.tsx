@@ -1,10 +1,11 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { Printer, TrendingUp, FileText } from 'lucide-react';
+import { Printer, Download } from 'lucide-react';
 import { TopBar } from '@/components/layout/TopBar';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { api, session } from '@/lib/api';
+import { downloadCsv } from '@/lib/export';
 
 const ACCENT = '#2563eb';
 
@@ -51,9 +52,31 @@ export default function StudentReportCardPage() {
               {report.student.section?.class?.label} · Section {report.student.section?.name} · Roll {report.student.rollNumber || '—'}
             </p>
           </div>
-          <Button variant="outline" onClick={() => window.print()}>
-            <Printer className="h-4 w-4" /> Print / Save PDF
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                const rows = report.exams.flatMap((e) =>
+                  e.rows.map((r) => ({
+                    Exam: e.exam.name,
+                    Type: e.exam.type,
+                    Date: e.exam.date ? new Date(e.exam.date).toLocaleDateString() : '',
+                    Subject: r.subject,
+                    Marks: r.marks,
+                    Max: r.max,
+                    Grade: r.grade ?? '',
+                    Remarks: r.remarks ?? '',
+                  })),
+                );
+                downloadCsv(`report-card-${report.student.rollNumber || report.student.id}.csv`, rows);
+              }}
+            >
+              <Download className="h-4 w-4" /> CSV
+            </Button>
+            <Button variant="outline" onClick={() => window.print()}>
+              <Printer className="h-4 w-4" /> Print / PDF
+            </Button>
+          </div>
         </div>
 
         {/* Cumulative hero */}

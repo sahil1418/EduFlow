@@ -6,8 +6,9 @@ import { TopBar } from '@/components/layout/TopBar';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { api, session } from '@/lib/api';
-import { Clock, Save, AlertTriangle, Send } from 'lucide-react';
+import { Clock, Save, AlertTriangle, Send, Download } from 'lucide-react';
 import { FileUpload, type Attachment } from '@/components/ui/FileUpload';
+import { downloadCsv } from '@/lib/export';
 
 type Detail = {
   id: string;
@@ -151,7 +152,30 @@ export default function AssignmentDetail() {
             </section>
 
             <Card>
-              <CardHeader title="Submissions" subtitle="Review and grade each entry." />
+              <CardHeader
+                title="Submissions"
+                subtitle="Review and grade each entry."
+                right={
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      const exportRows = rows.map((r) => ({
+                        Roll: r.student.rollNumber ?? '',
+                        Name: r.student.name,
+                        Status: r.status,
+                        Late: r.isLate ? 'yes' : 'no',
+                        SubmittedAt: r.submission?.submittedAt ? new Date(r.submission.submittedAt).toLocaleString() : '',
+                        Grade: r.submission?.grade ?? '',
+                        Feedback: r.submission?.feedback ?? '',
+                        BodyChars: r.submission?.body?.length ?? 0,
+                      }));
+                      downloadCsv(`submissions-${(detail.post.title || 'assignment').replace(/\s+/g, '-')}.csv`, exportRows);
+                    }}
+                  >
+                    <Download className="h-4 w-4" /> Export CSV
+                  </Button>
+                }
+              />
               <CardBody className="p-0">
                 <table className="w-full text-sm">
                   <thead>

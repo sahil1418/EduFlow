@@ -6,7 +6,8 @@ import { TopBar } from '@/components/layout/TopBar';
 import { Button } from '@/components/ui/Button';
 import { Input, Select } from '@/components/ui/Input';
 import { api, session } from '@/lib/api';
-import { CheckCircle2, Save, Megaphone } from 'lucide-react';
+import { CheckCircle2, Save, Megaphone, Download } from 'lucide-react';
+import { downloadCsv } from '@/lib/export';
 
 type ExamDetail = {
   id: string;
@@ -161,6 +162,26 @@ export default function ExamMarksEntry() {
             </div>
             <div className="ml-auto flex gap-2 items-center">
               {savedAt && <span className="text-xs text-[var(--color-text-muted)]">Saved {savedAt.toLocaleTimeString()}</span>}
+              <Button
+                variant="outline"
+                onClick={() => {
+                  const rows = students.map((s) => {
+                    const e = entries[s.id] ?? { marks: '', remarks: '' };
+                    const n = Number(e.marks);
+                    return {
+                      Roll: s.rollNumber ?? '',
+                      Name: s.name,
+                      Marks: e.marks === '' ? '' : n,
+                      Max: exam.maxMarks,
+                      Percentage: e.marks === '' ? '' : Math.round((n / exam.maxMarks) * 100),
+                      Remarks: e.remarks || '',
+                    };
+                  });
+                  downloadCsv(`marks-${exam.name.replace(/\s+/g, '-')}.csv`, rows);
+                }}
+              >
+                <Download className="h-4 w-4" /> CSV
+              </Button>
               <Button variant="outline" onClick={save} disabled={busy}>
                 <Save className="h-4 w-4" /> {busy ? 'Saving…' : 'Save'}
               </Button>

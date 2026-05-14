@@ -6,6 +6,7 @@ import { Settings, ChevronRight } from 'lucide-react';
 import { api, session } from '@/lib/api';
 import { portalForRole, type Role, type RolePortal } from '@/lib/role-config';
 import { PremiumLoader } from '@/components/common/PremiumLoader';
+import { PageTransition } from '@/components/layout/PageTransition';
 
 /**
  * Role-aware portal shell.
@@ -57,7 +58,9 @@ export function RolePortalShell({
   return (
     <div className="min-h-screen flex">
       <PortalSidebar portal={portal} schoolName={session.subdomain() ?? undefined} />
-      <div className="flex-1 flex flex-col min-w-0">{children}</div>
+      <div className="flex-1 flex flex-col min-w-0">
+        <PageTransition>{children}</PageTransition>
+      </div>
     </div>
   );
 }
