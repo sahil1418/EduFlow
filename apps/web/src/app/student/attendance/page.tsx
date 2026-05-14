@@ -23,12 +23,12 @@ const STATUS_BG: Record<string, string> = {
   ON_LEAVE: '#eef2ff',
 };
 
-type Record = { date: string; status: string; note: string | null };
+type DayRecord = { date: string; status: string; note: string | null };
 
 export default function StudentAttendancePage() {
   const me = session.user();
   const [monthOffset, setMonthOffset] = useState(0); // 0 = current
-  const [data, setData] = useState<{ percentage: number; records: Record[]; totals: any } | null>(null);
+  const [data, setData] = useState<{ percentage: number; records: DayRecord[]; totals: any } | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
   const month = useMemo(() => {
