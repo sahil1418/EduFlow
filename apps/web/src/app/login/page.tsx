@@ -2,10 +2,11 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Card, CardBody, CardHeader } from '@/components/ui/Card';
+import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { api, session } from '@/lib/api';
+import { ArrowRight } from 'lucide-react';
 
 type Mode = 'password' | 'otp';
 
@@ -55,85 +56,105 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="min-h-screen grid place-items-center px-4 py-12 bg-[var(--color-bg)]">
-      <div className="w-full max-w-md">
+    <main className="min-h-screen grid place-items-center px-4 py-12 relative overflow-hidden">
+      <div className="pointer-events-none absolute -top-32 -right-24 w-[28rem] h-[28rem] rounded-full"
+        style={{ background: 'radial-gradient(closest-side, rgba(79,70,229,0.22), transparent)' }} />
+      <div className="pointer-events-none absolute -bottom-32 -left-24 w-[26rem] h-[26rem] rounded-full"
+        style={{ background: 'radial-gradient(closest-side, rgba(20,184,166,0.20), transparent)' }} />
+
+      <div className="w-full max-w-md relative z-10">
         <Link href="/" className="flex items-center gap-2.5 justify-center mb-7 text-[var(--color-text-muted)] hover:text-[var(--color-text)]">
-          <div className="h-8 w-8 rounded-lg bg-[var(--color-brand)] grid place-items-center text-white font-bold text-sm">E</div>
-          <span className="font-semibold">EduFlow</span>
+          <div
+            className="h-9 w-9 rounded-xl grid place-items-center text-white font-bold"
+            style={{
+              background: 'linear-gradient(135deg, #4f46e5 0%, #14b8a6 100%)',
+              boxShadow: '0 6px 20px rgba(79,70,229,0.35)',
+            }}
+          >E</div>
+          <span className="font-bold tracking-tight text-[var(--color-text)]">EduFlow</span>
         </Link>
 
-        <Card>
-          <CardHeader title="Welcome back" subtitle="Sign in to your school portal." />
-          <CardBody>
-            <div className="flex gap-1 p-1 mb-5 bg-[var(--color-surface-muted)] rounded-lg text-sm">
-              <button
-                type="button"
-                onClick={() => { setMode('password'); setOtpRequested(false); setErr(null); }}
-                className={`flex-1 py-1.5 rounded-md font-medium transition-colors ${mode === 'password' ? 'bg-white shadow-sm text-[var(--color-text)]' : 'text-[var(--color-text-muted)]'}`}
-              >
-                Email + Password
-              </button>
-              <button
-                type="button"
-                onClick={() => { setMode('otp'); setErr(null); }}
-                className={`flex-1 py-1.5 rounded-md font-medium transition-colors ${mode === 'otp' ? 'bg-white shadow-sm text-[var(--color-text)]' : 'text-[var(--color-text-muted)]'}`}
-              >
-                OTP (parents)
-              </button>
-            </div>
+        <Card variant="solid" className="p-7">
+          <div className="ef-eyebrow mb-2">Sign in</div>
+          <h1 className="text-2xl font-bold tracking-tight text-[var(--color-text)]">Welcome back</h1>
+          <p className="text-sm text-[var(--color-text-muted)] mt-1">
+            Sign in to your school portal.
+          </p>
 
-            <form onSubmit={submit} className="space-y-4">
+          <div className="flex gap-1 p-1 mt-5 mb-5 bg-[var(--color-surface-muted)] rounded-xl text-sm">
+            <button
+              type="button"
+              onClick={() => { setMode('password'); setOtpRequested(false); setErr(null); }}
+              className={`flex-1 py-1.5 rounded-lg font-semibold transition-all ${mode === 'password' ? 'bg-white shadow-sm text-[var(--color-text)]' : 'text-[var(--color-text-muted)]'}`}
+            >
+              Email + Password
+            </button>
+            <button
+              type="button"
+              onClick={() => { setMode('otp'); setErr(null); }}
+              className={`flex-1 py-1.5 rounded-lg font-semibold transition-all ${mode === 'otp' ? 'bg-white shadow-sm text-[var(--color-text)]' : 'text-[var(--color-text-muted)]'}`}
+            >
+              OTP (parents)
+            </button>
+          </div>
+
+          <form onSubmit={submit} className="space-y-4">
+            <Input
+              label="School subdomain"
+              value={subdomain}
+              onChange={(e) => setSubdomain(e.target.value)}
+              placeholder="springfield"
+              required
+              hint="The part before .eduflow.app"
+            />
+            <Input
+              label={mode === 'password' ? 'Email' : 'Phone or email'}
+              value={identifier}
+              onChange={(e) => setIdentifier(e.target.value)}
+              placeholder={mode === 'password' ? 'admin@school.edu' : '+91… or you@school.edu'}
+              required
+            />
+            {mode === 'password' ? (
               <Input
-                label="School subdomain"
-                value={subdomain}
-                onChange={(e) => setSubdomain(e.target.value)}
-                placeholder="springfield"
+                label="Password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 required
-                hint="The part before .eduflow.app"
               />
+            ) : otpRequested ? (
               <Input
-                label={mode === 'password' ? 'Email' : 'Phone or email'}
-                value={identifier}
-                onChange={(e) => setIdentifier(e.target.value)}
-                placeholder={mode === 'password' ? 'admin@school.edu' : '+91…'}
+                label="6-digit code"
+                inputMode="numeric"
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
                 required
+                hint="Check your email (or SMS in dev)"
               />
-              {mode === 'password' ? (
-                <Input
-                  label="Password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
-              ) : otpRequested ? (
-                <Input
-                  label="6-digit code"
-                  inputMode="numeric"
-                  value={code}
-                  onChange={(e) => setCode(e.target.value)}
-                  required
-                  hint="Check your SMS / email (or terminal in dev)"
-                />
-              ) : null}
+            ) : null}
 
-              {err && <div className="text-sm text-[var(--color-danger)]">{err}</div>}
+            {err && (
+              <div className="text-sm text-[var(--color-danger)] bg-[var(--color-danger)]/8 border border-[var(--color-danger)]/15 rounded-xl px-3 py-2">
+                {err}
+              </div>
+            )}
 
-              <Button type="submit" disabled={busy} className="w-full">
-                {busy
-                  ? 'Working…'
-                  : mode === 'password'
-                  ? 'Sign in'
-                  : otpRequested
-                  ? 'Verify code'
-                  : 'Send OTP'}
-              </Button>
-            </form>
+            <Button type="submit" disabled={busy} className="w-full">
+              {busy
+                ? 'Working…'
+                : mode === 'password'
+                ? <>Sign in <ArrowRight className="h-4 w-4" /></>
+                : otpRequested
+                ? <>Verify code <ArrowRight className="h-4 w-4" /></>
+                : <>Send OTP <ArrowRight className="h-4 w-4" /></>}
+            </Button>
+          </form>
 
-            <p className="text-sm text-[var(--color-text-muted)] mt-5 text-center">
-              New school? <Link href="/register" className="text-[var(--color-brand)] font-semibold">Register</Link>
+          <div className="mt-6 pt-5 border-t border-[var(--color-border)] text-center">
+            <p className="text-sm text-[var(--color-text-muted)]">
+              New school? <Link href="/register" className="text-[var(--color-brand)] font-semibold hover:underline">Register</Link>
             </p>
-          </CardBody>
+          </div>
         </Card>
       </div>
     </main>

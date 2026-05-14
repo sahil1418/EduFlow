@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Sidebar } from '@/components/layout/Sidebar';
+import { PremiumLoader } from '@/components/common/PremiumLoader';
 import { session } from '@/lib/api';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -18,16 +19,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     setReady(true);
   }, [router]);
 
-  if (!ready) {
-    return (
-      <main className="min-h-screen grid place-items-center text-[var(--color-text-muted)] text-sm">
-        Loading…
-      </main>
-    );
-  }
+  if (!ready) return <PremiumLoader />;
 
   return (
-    <div className="min-h-screen flex bg-[var(--color-bg)]">
+    <div className="min-h-screen flex">
       <Sidebar schoolName={schoolName} />
       <div className="flex-1 flex flex-col min-w-0">{children}</div>
     </div>
