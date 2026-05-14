@@ -1,11 +1,27 @@
 import Link from 'next/link';
-import { ArrowRight, Shield, BookOpenCheck, MessagesSquare, BarChart3 } from 'lucide-react';
+import {
+  ArrowRight,
+  Shield,
+  BookOpenCheck,
+  MessagesSquare,
+  BarChart3,
+  ShieldAlert,
+  GraduationCap,
+  Users,
+} from 'lucide-react';
 
 const FEATURES = [
   { icon: Shield,         label: 'Multi-tenant — every school its own portal' },
   { icon: BookOpenCheck,  label: 'Attendance · Marks · Timetable · Fees in one place' },
   { icon: MessagesSquare, label: 'Class wall + real-time chat for teachers, students, parents' },
   { icon: BarChart3,      label: 'Reports & analytics — at-risk students flagged automatically' },
+];
+
+const PORTALS = [
+  { href: '/login/principal', label: 'Principal', icon: ShieldAlert,    accent: '#dc2626', chipClass: 'ef-role-admin'   },
+  { href: '/login/teacher',   label: 'Teacher',   icon: Shield,         accent: '#d97706', chipClass: 'ef-role-teacher' },
+  { href: '/login/student',   label: 'Student',   icon: GraduationCap,  accent: '#2563eb', chipClass: 'ef-role-student' },
+  { href: '/login/parent',    label: 'Parent',    icon: Users,          accent: '#0d9488', chipClass: 'ef-role-parent'  },
 ];
 
 export default function Landing() {
@@ -63,6 +79,28 @@ export default function Landing() {
               <Link href="/login" className="ef-btn ef-btn-outline">Sign in</Link>
             </div>
             <p className="mt-3 ef-eyebrow">No credit card · CBSE / ICSE / State board ready</p>
+
+            {/* Role-tagged portal entry */}
+            <div className="mt-10">
+              <div className="ef-eyebrow mb-3">Sign in by role</div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {PORTALS.map(({ href, label, icon: Icon, accent, chipClass }) => (
+                  <Link
+                    key={href}
+                    href={href}
+                    className="ef-card flex flex-col items-center gap-1.5 py-3 group hover:border-[var(--color-brand)]/40 transition-all"
+                  >
+                    <span
+                      className="h-9 w-9 rounded-xl grid place-items-center"
+                      style={{ background: `${accent}14`, boxShadow: `0 0 18px ${accent}22` }}
+                    >
+                      <Icon className="h-4 w-4" style={{ color: accent }} strokeWidth={2.2} />
+                    </span>
+                    <span className={`ef-chip ${chipClass}`}>{label}</span>
+                  </Link>
+                ))}
+              </div>
+            </div>
           </div>
 
           <div className="ef-card p-7 relative">
