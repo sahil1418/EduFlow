@@ -50,7 +50,7 @@ export function GradeTrendSparkline({
                 padding: '4px 8px',
               }}
               labelFormatter={() => ''}
-              formatter={(v: number) => [`${Math.round(v)}%`, '']}
+              formatter={(v) => [`${Math.round(Number(v ?? 0))}%`, '']}
             />
             <Line
               type="monotone"
