@@ -1,7 +1,7 @@
 'use client';
 import { useRef, useState } from 'react';
 import { Paperclip, X, Loader2 } from 'lucide-react';
-import { session } from '@/lib/api';
+import { session, trackedFetch } from '@/lib/api';
 
 export type Attachment = {
   url: string;
@@ -37,7 +37,7 @@ export function FileUpload({
       for (const f of Array.from(files)) {
         const fd = new FormData();
         fd.append('file', f);
-        const res = await fetch(
+        const res = await trackedFetch(
           `${process.env.NEXT_PUBLIC_API_BASE ?? 'http://localhost:4001'}/uploads`,
           {
             method: 'POST',
