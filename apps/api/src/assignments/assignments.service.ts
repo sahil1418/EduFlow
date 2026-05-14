@@ -76,6 +76,22 @@ export class AssignmentsService {
     return a;
   }
 
+  /** A student's own submission for an assignment, or null if they haven't submitted. */
+  async myStudentSubmission(schoolId: string, assignmentId: string, studentId: string) {
+    const a = await this.prisma.assignment.findUnique({
+      where: { id: assignmentId },
+      include: { post: { select: { schoolId: true } } },
+    });
+    if (!a || a.post.schoolId !== schoolId) throw new NotFoundException('Assignment not found');
+
+    return this.prisma.submission.findUnique({
+      where: { assignmentId_studentId: { assignmentId, studentId } },
+      include: {
+        gradedBy: { select: { id: true, name: true } },
+      },
+    });
+  }
+
   async submissions(schoolId: string, assignmentId: string) {
     const a = await this.detail(schoolId, assignmentId);
 

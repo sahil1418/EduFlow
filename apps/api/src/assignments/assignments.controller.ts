@@ -37,6 +37,17 @@ export class AssignmentsController {
     return this.a.submissions(schoolId, id);
   }
 
+  /** A student's own submission for one assignment (or null). */
+  @Get(':id/my-submission')
+  @Roles(Role.STUDENT)
+  mySubmission(
+    @SchoolId() schoolId: string,
+    @CurrentUser() user: any,
+    @Param('id') id: string,
+  ) {
+    return this.a.myStudentSubmission(schoolId, id, user.sub);
+  }
+
   @Post(':id/submit')
   @Roles(Role.STUDENT)
   submit(

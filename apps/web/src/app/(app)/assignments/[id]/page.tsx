@@ -6,7 +6,7 @@ import { TopBar } from '@/components/layout/TopBar';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { api, session } from '@/lib/api';
-import { Clock, Save, AlertTriangle, Send, Download } from 'lucide-react';
+import { Clock, Save, AlertTriangle, Send, Download, CheckCircle2, Award, Pencil } from 'lucide-react';
 import { FileUpload, type Attachment } from '@/components/ui/FileUpload';
 import { downloadCsv } from '@/lib/export';
 
@@ -36,11 +36,14 @@ export default function AssignmentDetail() {
 
   const [detail, setDetail] = useState<Detail | null>(null);
   const [rows, setRows] = useState<Row[]>([]);
+  const [mySubmission, setMySubmission] = useState<any>(null);
+  const [editMode, setEditMode] = useState(false);
   const [studentBody, setStudentBody] = useState('');
   const [studentFiles, setStudentFiles] = useState<Attachment[]>([]);
   const [gradeMap, setGradeMap] = useState<Record<string, { grade: string; feedback: string }>>({});
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [justSubmitted, setJustSubmitted] = useState(false);
 
   async function load() {
     try {
@@ -49,7 +52,14 @@ export default function AssignmentDetail() {
       });
       setDetail(d);
 
-      if (!isStudent) {
+      if (isStudent) {
+        const m = await api<any>(`/assignments/${id}/my-submission`, {
+          token: session.token(), subdomain: session.subdomain(),
+        }).catch(() => null);
+        setMySubmission(m);
+        if (m?.body) setStudentBody(m.body);
+        if (m?.attachmentsJson) setStudentFiles(m.attachmentsJson as Attachment[]);
+      } else {
         const s = await api<{ rows: Row[] }>(`/assignments/${id}/submissions`, {
           token: session.token(), subdomain: session.subdomain(),
         });
@@ -69,6 +79,7 @@ export default function AssignmentDetail() {
 
   async function submitAsStudent() {
     setBusy(true);
+    setErr(null);
     try {
       await api(`/assignments/${id}/submit`, {
         method: 'POST',
@@ -76,8 +87,14 @@ export default function AssignmentDetail() {
         subdomain: session.subdomain(),
         body: JSON.stringify({ body: studentBody, attachments: studentFiles }),
       });
-      alert('Submitted!');
-      setStudentFiles([]);
+      // Refetch so the UI immediately reflects the submission status.
+      const fresh = await api<any>(`/assignments/${id}/my-submission`, {
+        token: session.token(), subdomain: session.subdomain(),
+      });
+      setMySubmission(fresh);
+      setEditMode(false);
+      setJustSubmitted(true);
+      setTimeout(() => setJustSubmitted(false), 3500);
     } catch (e: any) { setErr(e.message); }
     finally { setBusy(false); }
   }
@@ -123,25 +140,19 @@ export default function AssignmentDetail() {
         </Card>
 
         {isStudent ? (
-          <Card>
-            <CardHeader title="Your submission" subtitle="Type your answer or upload a file (file upload coming soon)." />
-            <CardBody>
-              <textarea
-                className="ef-input min-h-[8rem]"
-                placeholder="Write your submission here…"
-                value={studentBody}
-                onChange={(e) => setStudentBody(e.target.value)}
-              />
-              <div className="mt-3">
-                <FileUpload value={studentFiles} onChange={setStudentFiles} label="Files" />
-              </div>
-              <div className="mt-3 flex justify-end">
-                <Button onClick={submitAsStudent} disabled={busy || (!studentBody.trim() && !studentFiles.length)}>
-                  <Send className="h-4 w-4" /> {busy ? 'Sending…' : 'Submit'}
-                </Button>
-              </div>
-            </CardBody>
-          </Card>
+          <StudentSubmissionView
+            mySubmission={mySubmission}
+            justSubmitted={justSubmitted}
+            editMode={editMode}
+            setEditMode={setEditMode}
+            studentBody={studentBody}
+            setStudentBody={setStudentBody}
+            studentFiles={studentFiles}
+            setStudentFiles={setStudentFiles}
+            submit={submitAsStudent}
+            busy={busy}
+            maxMarks={detail.maxMarks}
+          />
         ) : (
           <>
             <section className="grid sm:grid-cols-4 gap-4">
@@ -261,4 +272,208 @@ function StatusChip({ status, late }: { status: string; late: boolean }) {
     </span>
   );
   return <span className="ef-chip">Pending</span>;
+}
+
+// =====================================================================
+// Student submission view — Submit / Submitted / Graded states
+// =====================================================================
+
+function StudentSubmissionView({
+  mySubmission,
+  justSubmitted,
+  editMode,
+  setEditMode,
+  studentBody,
+  setStudentBody,
+  studentFiles,
+  setStudentFiles,
+  submit,
+  busy,
+  maxMarks,
+}: {
+  mySubmission: any;
+  justSubmitted: boolean;
+  editMode: boolean;
+  setEditMode: (v: boolean) => void;
+  studentBody: string;
+  setStudentBody: (v: string) => void;
+  studentFiles: Attachment[];
+  setStudentFiles: (v: Attachment[]) => void;
+  submit: () => void;
+  busy: boolean;
+  maxMarks: number | null;
+}) {
+  const status = mySubmission?.status;
+  const isGraded = status === 'GRADED';
+  const isSubmitted = status === 'SUBMITTED';
+  const showForm = !mySubmission || editMode;
+
+  // GRADED — show the result card prominently
+  if (isGraded && !editMode) {
+    const grade = mySubmission.grade;
+    const pct = maxMarks && grade != null ? Math.round((grade / maxMarks) * 100) : null;
+    const tone = pct == null ? 'info' : pct >= 70 ? 'success' : pct >= 40 ? 'warn' : 'danger';
+    const toneColor =
+      tone === 'success' ? 'var(--color-success)' :
+      tone === 'warn'    ? 'var(--color-warn)' :
+      tone === 'danger'  ? 'var(--color-danger)' :
+                           'var(--color-info)';
+
+    return (
+      <>
+        <Card variant="solid" className="overflow-hidden">
+          <div className="relative p-6">
+            <div className="absolute inset-0 opacity-[0.08] pointer-events-none"
+              style={{ background: `radial-gradient(circle at 100% 0%, ${toneColor} 0%, transparent 50%)` }} />
+            <div className="relative">
+              <div className="ef-chip ef-chip-success mb-2">
+                <Award className="h-3 w-3" /> Graded
+              </div>
+              <div className="flex items-end gap-4 flex-wrap">
+                <div>
+                  <div className="ef-eyebrow">Your grade</div>
+                  <div className="flex items-baseline gap-2 mt-1">
+                    <span className="text-5xl font-bold tabular-nums tracking-tight" style={{ color: toneColor }}>
+                      {grade}
+                    </span>
+                    {maxMarks != null && (
+                      <span className="text-lg text-[var(--color-text-muted)] tabular-nums">/ {maxMarks}</span>
+                    )}
+                    {pct != null && (
+                      <span className="ef-chip" style={{ marginLeft: '0.5rem' }}>{pct}%</span>
+                    )}
+                  </div>
+                </div>
+                {mySubmission.gradedBy && (
+                  <div className="ml-auto text-xs text-[var(--color-text-muted)] text-right">
+                    <div className="ef-eyebrow">Graded by</div>
+                    <div className="mt-1 font-medium text-[var(--color-text)]">{mySubmission.gradedBy.name}</div>
+                    {mySubmission.gradedAt && (
+                      <div className="text-[10px] mt-0.5">{new Date(mySubmission.gradedAt).toLocaleString()}</div>
+                    )}
+                  </div>
+                )}
+              </div>
+              {mySubmission.feedback && (
+                <div className="mt-5 p-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-muted)]">
+                  <div className="ef-eyebrow mb-1.5">Feedback</div>
+                  <p className="text-sm whitespace-pre-wrap">{mySubmission.feedback}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </Card>
+
+        <Card>
+          <CardHeader
+            title="What you submitted"
+            subtitle={mySubmission.submittedAt ? `Submitted ${new Date(mySubmission.submittedAt).toLocaleString()}${mySubmission.isLate ? ' (late)' : ''}` : 'Submitted'}
+          />
+          <CardBody>
+            {mySubmission.body && (
+              <p className="text-sm whitespace-pre-wrap text-[var(--color-text)]">{mySubmission.body}</p>
+            )}
+            {Array.isArray(mySubmission.attachmentsJson) && mySubmission.attachmentsJson.length > 0 && (
+              <ul className="mt-3 flex flex-wrap gap-2">
+                {(mySubmission.attachmentsJson as Attachment[]).map((a, i) => (
+                  <li key={i}>
+                    <a href={a.url} target="_blank" rel="noreferrer" className="ef-chip hover:bg-[var(--color-brand-soft)] hover:text-[var(--color-brand)]">
+                      {a.name}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </CardBody>
+        </Card>
+      </>
+    );
+  }
+
+  // SUBMITTED but not graded — show a positive confirmation, allow re-edit
+  if (isSubmitted && !editMode) {
+    return (
+      <Card variant="solid" className="overflow-hidden">
+        <div className="relative p-6">
+          {justSubmitted && (
+            <div className="absolute -top-px left-8 right-8 h-px shimmer-line"
+              style={{ background: 'linear-gradient(90deg, transparent, var(--color-success), transparent)' }} />
+          )}
+          <div className="flex items-start gap-4">
+            <div
+              className="h-12 w-12 rounded-xl grid place-items-center shrink-0"
+              style={{ background: 'rgba(22,163,74,0.10)' }}
+            >
+              <CheckCircle2 className="h-6 w-6 text-[var(--color-success)]" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="ef-chip ef-chip-success mb-1.5">
+                <CheckCircle2 className="h-3 w-3" /> {mySubmission.isLate ? 'Submitted (late)' : 'Submitted'}
+              </div>
+              <h3 className="font-semibold text-lg">
+                {justSubmitted ? 'Just submitted!' : 'Your work is in.'}
+              </h3>
+              <p className="text-sm text-[var(--color-text-muted)] mt-1">
+                {mySubmission.submittedAt ? `On ${new Date(mySubmission.submittedAt).toLocaleString()}.` : ''}
+                {' '}Waiting for your teacher to grade it.
+              </p>
+              {mySubmission.body && (
+                <div className="mt-4 p-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-muted)]">
+                  <p className="text-sm whitespace-pre-wrap">{mySubmission.body}</p>
+                </div>
+              )}
+              {Array.isArray(mySubmission.attachmentsJson) && mySubmission.attachmentsJson.length > 0 && (
+                <ul className="mt-3 flex flex-wrap gap-2">
+                  {(mySubmission.attachmentsJson as Attachment[]).map((a, i) => (
+                    <li key={i}>
+                      <a href={a.url} target="_blank" rel="noreferrer" className="ef-chip hover:bg-[var(--color-brand-soft)] hover:text-[var(--color-brand)]">
+                        {a.name}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+            <Button variant="outline" onClick={() => setEditMode(true)} className="shrink-0">
+              <Pencil className="h-4 w-4" /> Edit
+            </Button>
+          </div>
+        </div>
+      </Card>
+    );
+  }
+
+  // FORM — initial submit or re-edit
+  return (
+    <Card>
+      <CardHeader
+        title={mySubmission ? 'Update your submission' : 'Your submission'}
+        subtitle={mySubmission ? 'Re-submitting will replace your previous answer.' : 'Type your answer below; you can attach files too.'}
+        right={
+          mySubmission && (
+            <Button variant="ghost" onClick={() => setEditMode(false)}>Cancel</Button>
+          )
+        }
+      />
+      <CardBody>
+        <textarea
+          className="ef-input min-h-[8rem]"
+          placeholder="Write your submission here…"
+          value={studentBody}
+          onChange={(e) => setStudentBody(e.target.value)}
+        />
+        <div className="mt-3">
+          <FileUpload value={studentFiles} onChange={setStudentFiles} label="Files" />
+        </div>
+        <div className="mt-4 flex justify-end gap-2">
+          <Button
+            onClick={submit}
+            disabled={busy || (!studentBody.trim() && !studentFiles.length)}
+          >
+            <Send className="h-4 w-4" /> {busy ? 'Sending…' : mySubmission ? 'Re-submit' : 'Submit'}
+          </Button>
+        </div>
+      </CardBody>
+    </Card>
+  );
 }
