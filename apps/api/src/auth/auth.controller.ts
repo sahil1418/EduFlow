@@ -33,4 +33,11 @@ export class AuthController {
   me(@CurrentUser() user: any) {
     return user;
   }
+
+  /** Children linked to the currently logged-in parent. Used by the parent portal. */
+  @UseGuards(JwtAuthGuard)
+  @Get('me/children')
+  myChildren(@CurrentUser() user: any) {
+    return this.auth.myChildren(user.sub);
+  }
 }

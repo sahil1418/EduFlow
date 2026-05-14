@@ -113,6 +113,27 @@ export class AuthService {
     return { accessToken: await this.signToken(user), user: this.publicUser(user) };
   }
 
+  async myChildren(userId: string) {
+    const links = await this.prisma.parentLink.findMany({
+      where: { parentId: userId },
+      include: {
+        student: {
+          include: {
+            section: { include: { class: { select: { id: true, label: true, grade: true } } } },
+          },
+        },
+      },
+    });
+    return links.map((l) => {
+      const { password, ...student } = l.student as any;
+      return {
+        parentLinkId: l.id,
+        relation: l.relation,
+        student,
+      };
+    });
+  }
+
   private signToken(user: { id: string; role: Role; schoolId: string }) {
     return this.jwt.signAsync({ sub: user.id, role: user.role, schoolId: user.schoolId });
   }
